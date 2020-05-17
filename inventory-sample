@@ -1,0 +1,11 @@
+[kpatch]
+kpatch8
+
+[vbox]
+kpatch-test-801.example.com
+
+[vbox-host]
+vboxhost.example.com ansible_host=your_ip_address_here ansible_python_interpreter=/usr/bin/python3 remote_user=your_service_account_here
+
+[satellite]
+satellite.example.com
