@@ -1,0 +1,10 @@
+---
+# Copy this file to vbox-vars.yml and fill in your values
+# #
+vbox_host: vbox.example.com
+vbox_remote_user: vbox
+sat_host: satellite.example.com
+sat_org: Organization
+sat_loc: Location
+sat_hg: HostGroup
+...
