@@ -1,0 +1,69 @@
+---
+- name: Create an empty VirtualBox VM for a Kickstart and capture the MAC address
+  hosts: vbox
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Create a new Vbox image from template for kickstart
+      command: "vboxmanage clonevm lococlient-template --mode machine --name {{ inventory_hostname | regex_replace('\\..*$', '') }} --groups '/Lab - satellite6 - lab.local' --register"
+      delegate_to: "{{ vbox_host }}"
+      remote_user: "{{ vbox_remote_user }}" 
+      register: vbox_createvm
+      failed_when: vbox_createvm.rc != 0
+
+    - name: Extract the mac address for the new VM to store in a local fact
+      shell: |
+        /usr/bin/vboxmanage showvminfo --machinereadable {{ inventory_hostname | regex_replace('\..*$', '') }} | grep macaddress1 | sed -e 's/.*=\"//' -e 's/\".*$//'
+      delegate_to: "{{ vbox_host }}"
+      remote_user: "{{ vbox_remote_user }}" 
+      register: vbox_mac_query
+      failed_when: vbox_mac_query.rc != 0
+
+    - name: Debug - display output from vboxmanage showvminfo
+      debug:
+        var: vbox_mac_query
+      delegate_to: localhost
+
+    - name: Store the MAC address as a local fact for the new VM
+      set_fact:
+        vbox_mac: "{{ vbox_mac_query.stdout }}"
+        cacheable: yes
+      delegate_to: localhost
+
+
+- name: Display the MAC address of the new VM
+  hosts: vbox
+  gather_facts: false
+  tasks:
+    - name: Print out the output from the snapshot
+      debug:
+        var: hostvars[inventory_hostname].ansible_facts.vbox_mac
+      delegate_to: localhost
+
+
+- name: Create a new host in Satellite for provisioning
+  hosts: vbox
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Create a new host in Satellite that is ready for provisioning
+      command: |
+        /usr/bin/hammer host create --name {{ inventory_hostname | regex_replace('\..*$', '') }} --organization {{ sat_org }} --location {{ sat_loc }} --hostgroup {{ sat_hg }} --mac {{ hostvars[inventory_hostname].ansible_facts.vbox_mac }} --build True --managed True
+      delegate_to: satellite6.lab.local
+      register: hammer_host_create
+      failed_when: hammer_host_create.rc != 0
+
+- name: Power on the VM to initiate the Kickstart
+  hosts: vbox
+  gather_facts: false
+  become: false
+  tasks: 
+    - name: Power-on the VM for {{ inventory_hostname }} to initiate the Kickstart from Satellite 6
+      command: |
+        vboxmanage startvm {{ inventory_hostname | regex_replace('\..*$', '') }}
+      delegate_to: "{{ vbox_host }}"
+      remote_user: "{{ vbox_remote_user }}" 
+      register: vbox_startvm
+      failed_when: vbox_startvm.rc != 0
+
+...
