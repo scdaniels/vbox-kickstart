@@ -1,7 +1,7 @@
 ---
 - name: Create an empty VirtualBox VM for a Kickstart and capture the MAC address
   hosts: all
-  become: false
+  become: true
   gather_facts: false
   tasks:
     - name: Create a new Vbox image from template for kickstart
@@ -15,7 +15,7 @@
       shell: |
         /usr/bin/vboxmanage showvminfo --machinereadable {{ inventory_hostname | regex_replace('\..*$', '') }} | grep macaddress1 | sed -e 's/.*=\"//' -e 's/\".*$//'
       delegate_to: "{{ vbox_host }}"
-      remote_user: "{{ vbox_remote_user }}" 
+      become_user: "{{ vbox_remote_user }}" 
       register: vbox_mac_query
       failed_when: vbox_mac_query.rc != 0
 
