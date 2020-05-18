@@ -7,6 +7,7 @@
     - name: Create a new Vbox image from template for kickstart
       command: "vboxmanage clonevm lococlient-template --mode machine --name {{ inventory_hostname | regex_replace('\\..*$', '') }} --groups '/Lab - satellite6 - lab.local' --register"
       delegate_to: "{{ vbox_host }}"
+      remote_user: ansibleop
       become_user: "{{ vbox_remote_user }}" 
       register: vbox_createvm
       failed_when: vbox_createvm.rc != 0
