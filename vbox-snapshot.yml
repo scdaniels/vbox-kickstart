@@ -1,0 +1,22 @@
+---
+- name: Take a snaphost of an inventory_hostname of the vbox server
+  hosts: vbox
+  become: false
+  gather_facts: false
+  remote_user: "{{ vbox_remote_user }}"
+
+  tasks:
+    - name: Take the snapshot of the guest prior to patching
+      command: "vboxmanage snapshot {{ inventory_hostname | regex_replace('\\..*$', '') }} take Patch123 --live"
+      delegate_to: "{{ vbox_host }}"
+      register: vboxmanage_out
+
+
+
+- name: Print out the results of the snapshot
+  hosts: vbox
+  tasks:
+    - name: Print out the output from the snapshot
+      debug:
+        var: vboxmanage_out
+...
