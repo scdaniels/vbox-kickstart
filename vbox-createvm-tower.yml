@@ -1,5 +1,6 @@
 ---
 - name: Create an empty VirtualBox VM for a Kickstart and capture the MAC address
+  hosts: all
   become: false
   gather_facts: false
   tasks:
@@ -31,6 +32,7 @@
 
 
 - name: Display the MAC address of the new VM
+  hosts: all
   gather_facts: false
   tasks:
     - name: Print out the output from the snapshot
@@ -40,6 +42,7 @@
 
 
 - name: Create a new host in Satellite for provisioning
+  hosts: all
   gather_facts: false
   become: true
   tasks:
@@ -51,6 +54,7 @@
       failed_when: hammer_host_create.rc != 0
 
 - name: Power on the VM to initiate the Kickstart
+  hosts: all
   gather_facts: false
   become: false
   tasks: 
