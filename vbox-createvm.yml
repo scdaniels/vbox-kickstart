@@ -7,7 +7,7 @@
     - vars/vbox-vars.yml
   tasks:
     - name: Create a new Vbox image from template for kickstart
-      command: "vboxmanage clonevm lococlient-template --mode machine --name {{ inventory_hostname | regex_replace('\\..*$', '') }} --groups '/Lab - satellite6 - lab.local' --register"
+      command: "vboxmanage clonevm {{ vbox_template }} --mode machine --name {{ inventory_hostname | regex_replace('\\..*$', '') }} --groups '{{ vbox_group }}' --register"
       delegate_to: "{{ vbox_host }}"
       remote_user: "{{ vbox_remote_user }}" 
       register: vbox_createvm
@@ -21,10 +21,10 @@
       register: vbox_mac_query
       failed_when: vbox_mac_query.rc != 0
 
-    - name: Debug - display output from vboxmanage showvminfo
-      debug:
-        var: vbox_mac_query
-      delegate_to: localhost
+#    - name: Debug - display output from vboxmanage showvminfo
+#      debug:
+#        var: vbox_mac_query
+#      delegate_to: localhost
 
     - name: Store the MAC address as a local fact for the new VM
       set_fact:
@@ -39,7 +39,7 @@
   vars_files:
     - vars/vbox-vars.yml
   tasks:
-    - name: Print out the output from the snapshot
+    - name: Print out the MAC
       debug:
         var: hostvars[inventory_hostname].ansible_facts.vbox_mac
       delegate_to: localhost
@@ -55,9 +55,42 @@
     - name: Create a new host in Satellite that is ready for provisioning
       command: |
         /usr/bin/hammer host create --name {{ inventory_hostname | regex_replace('\..*$', '') }} --organization {{ sat_org }} --location {{ sat_loc }} --hostgroup {{ sat_hg }} --mac {{ hostvars[inventory_hostname].ansible_facts.vbox_mac }} --build True --managed True
-      delegate_to: satellite6.lab.local
+      delegate_to: "{{ sat_host }}"
       register: hammer_host_create
       failed_when: hammer_host_create.rc != 0
+
+    - name: Capture the assigned IP address and store as a fact
+      shell: |
+        /usr/bin/hammer host info --name {{ inventory_hostname }} --organization {{ sat_org }} --fields "{{ hammer_ip_fields }}" | sed -e 1d -e "s/.*address: //"
+      delegate_to: "{{ sat_host }}"
+      register: hammer_ip_query
+      failed_when: hammer_ip_query.rc != 0
+
+    - name: Store the IP address as a local fact for the new VM
+      set_fact:
+        os_ipv4_addr: "{{ hammer_ip_query.stdout }}"
+        cacheable: yes
+      delegate_to: localhost
+
+    - name: Display IP address
+      debug:
+        var: hostvars[inventory_hostname].ansible_facts.os_ipv4_addr
+      delegate_to: localhost  
+
+
+- name: Update /etc/hosts to include the new server
+  hosts: vbox
+  gather_facts: false
+  vars_files:
+    - vars/vbox-vars.yml
+  tasks:      
+    - name: Insert IP address into local host file
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ hostvars[inventory_hostname].ansible_facts.os_ipv4_addr }} {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
+        insertafter: EOF
+      delegate_to: localhost
+
 
 - name: Power on the VM to initiate the Kickstart
   hosts: vbox
@@ -67,8 +100,7 @@
     - vars/vbox-vars.yml
   tasks: 
     - name: Power-on the VM for {{ inventory_hostname }} to initiate the Kickstart from Satellite 6
-      command: |
-        vboxmanage startvm {{ inventory_hostname | regex_replace('\..*$', '') }}
+      command: vboxmanage startvm {{ inventory_hostname | regex_replace('\..*$', '') }}
       delegate_to: "{{ vbox_host }}"
       remote_user: "{{ vbox_remote_user }}" 
       register: vbox_startvm

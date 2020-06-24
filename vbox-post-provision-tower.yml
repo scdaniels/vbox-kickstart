@@ -1,0 +1,86 @@
+---
+- name: Post provisioning Network Configuration
+  hosts: vbox
+  become: true
+  vars_files:
+    - vars/vbox-vars.yml
+
+  handlers:
+    - name: restart sssd
+      service:
+        name: sssd
+        state: restarted
+    - name: daemon reload
+      systemd:
+        daemon_reload: yes
+
+
+  tasks:
+    - name: enable install repos
+      rhsm_repository:
+        name: "{{ repo }}"
+        state: enabled
+      loop_control:
+        loop_var: repo
+      loop:
+        - "{{ rhel_repos }}"
+
+    - name: Add AD server to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ adjoin_hosts_entry }}"
+        regexp: '^{{ adjoin_hosts_entry }}'
+        insertafter: EOF
+        create: yes
+
+    - name: Update /etc/resolve via NM
+      command: |
+        nmcli con modify "System enp0s3" ipv4.dns 10.1.1.6 ipv4.dns-search ad.scdlabs.com,idm.scdlabs.com,scdhome.internal
+      register: nmcli_update
+      failed_when: nmcli_update.rc != 0
+
+    - name: Refresh the network interface - down/up
+      shell: |
+        nmcli con down "System enp0s3" && nmcli con up "System enp0s3"
+      register: cmd
+      failed_when: cmd.rc != 0
+
+    - name: Install packages needed to join AD Domain
+      yum:
+        name: "{{ adjoin_packages }}"
+        state: latest
+
+    - name: Join the domain using realm join
+      shell: echo {{ adjoin_admin_password }} | realm join --user {{ adjoin_admin_user }} {{ ad_host }}
+      register: adjoin_output
+
+    - name: Update /etc/sssd/sssd.conf with custom preferences
+      block:
+        - name: Update use_fully_qualified_names setting
+          lineinfile:
+            path: /etc/sssd/sssd.conf
+            regexp: '^use_fully_qualified_names'
+            line: "use_fully_qualified_names = False"
+            create: yes
+          notify:
+            - restart sssd
+            - daemon reload
+
+        - name: Update fallback_homedir
+          lineinfile:
+            path: /etc/sssd/sssd.conf
+            regexp: '^fallback_homedir'
+            line: 'fallback_homedir = /home/%u'
+            create: yes
+          notify:
+            - restart sssd
+            - daemon reload
+
+    - name: Update the sudoers file
+      lineinfile:
+        path: /etc/sudoers.d/sudoers
+        regexp: "^%sodoers"
+        line: "%sodoers    ALL=(ALL)       ALL"
+        create: yes
+
+...
