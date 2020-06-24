@@ -13,7 +13,7 @@
         daemon_reload: yes
 
   tasks:
-    - name: enable install repos
+    - name: Configure default RHEL repos
       rhsm_repository:
         name: "{{ repo }}"
         state: enabled
@@ -21,6 +21,12 @@
         loop_var: repo
       loop:
         - "{{ rhel_repos }}"
+
+    - name: Download and install Telegraf RPM
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ remote_rpm_pkgs }}"
 
     - name: Add AD server to /etc/hosts
       lineinfile:
@@ -30,7 +36,7 @@
         insertafter: EOF
         create: yes
 
-    - name: Update /etc/resolve via NM
+    - name: Update /etc/resolve
       command: |
         nmcli con modify "System enp0s3" ipv4.dns 10.1.1.6 ipv4.dns-search ad.scdlabs.com,idm.scdlabs.com,scdhome.internal
       register: nmcli_update
@@ -38,7 +44,7 @@
 
     - name: Refresh the network interface - down/up
       shell: |
-        nmcli con down "System enp0s3" && nmcli con up "System enp0s3"
+        nmcli con down "System enp0s3" && nmcli con up "System enp0s3" && ping -c 20 bootstrap.idm.scdlabs.com
       register: cmd
       failed_when: cmd.rc != 0
 
