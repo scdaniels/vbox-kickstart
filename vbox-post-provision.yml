@@ -25,6 +25,12 @@
       loop:
         - "{{ rhel_repos }}"
 
+    - name: Download and install Telegraf RPM
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ remote_rpm_pkgs }}"
+
     - name: Add AD server to /etc/hosts
       lineinfile:
         path: /etc/hosts
