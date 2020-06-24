@@ -115,5 +115,7 @@
         value: "{{ os_ipv4_addr }}"
         state: present
       delegate_to: "{{ ad_host }}"
+      connection: winrm
+      port: 5986
 
 ...
