@@ -1,6 +1,6 @@
 ---
 - name: Post provisioning Network Configuration
-  hosts: vbox
+  hosts: all
   become: true
 
   handlers:
