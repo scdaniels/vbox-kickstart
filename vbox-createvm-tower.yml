@@ -45,6 +45,8 @@
   hosts: all
   gather_facts: false
   become: true
+  vars_files:
+    - vars/vbox-vars.yml
   tasks:
     - name: Create a new host in Satellite that is ready for provisioning
       command: |
@@ -55,7 +57,7 @@
 
     - name: Capture the assigned IP address and store as a fact
       shell: |
-        /usr/bin/hammer host info --name {{ inventory_hostname }} --organization {{ sat_org }} --fields {{ hammer_ip_addr_fields }} | sed -e 1d -e "s/.*address: //"
+        /usr/bin/hammer host info --name {{ inventory_hostname }} --organization {{ sat_org }} --fields "{{ hammer_ip_fields }}" | sed -e 1d -e "s/.*address: //"
       delegate_to: "{{ sat_host }}"
       register: hammer_ip_query
       failed_when: hammer_ip_query.rc != 0
@@ -64,7 +66,28 @@
       set_fact:
         os_ipv4_addr: "{{ hammer_ip_query.stdout }}"
         cacheable: yes
-      delegate_to: "{{ sat_host }}"
+      delegate_to: localhost
+
+    - name: Display IP address
+      debug:
+        #var: hostvars[inventory_hostname].ansible_facts.os_ipv4_addr
+        var: os_ipv4_addr
+      delegate_to: localhost  
+
+
+- name: Update /etc/hosts to include the new server
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - vars/vbox-vars.yml
+  tasks:      
+    - name: Insert IP address into local host file
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ hostvars[inventory_hostname].ansible_facts.os_ipv4_addr }} {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
+        insertafter: EOF
+      delegate_to: localhost
+
       
   
 - name: Power on the VM to initiate the Kickstart
