@@ -106,4 +106,24 @@
       register: vbox_startvm
       failed_when: vbox_startvm.rc != 0
 
+
+- name: Inject IP Addr in AD/DNS
+  hosts: vbox
+  gather_facts: false
+  become: false
+  vars_files:
+    - vars/vbox-vars.yml
+  tasks:
+    - name: Compute Short Hostname for debugging
+      debug:
+        msg: "{{ inventory_hostname.split('.')[0] }}"
+    - name:  Add DNS A record
+      win_dns_record:
+        name: "{{ inventory_hostname.split('.')[0] }}"
+        type: A
+        zone: "{{ inventory_hostname.split('.')[1:4] | join('.') }}"
+        value: "{{ os_ipv4_addr }}"
+        state: present
+      delegate_to: "{{ ad_host }}"
+
 ...
