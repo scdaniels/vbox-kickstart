@@ -48,7 +48,7 @@
   tasks:
     - name: Create a new host in Satellite that is ready for provisioning
       command: |
-        /usr/bin/hammer host create --name {{ inventory_hostname | regex_replace('\..*$', '') }} --organization {{ sat_org }} --location {{ sat_loc }} --hostgroup {{ sat_hg }} --mac {{ hostvars[inventory_hostname].ansible_facts.vbox_mac }} --build True --managed True
+        /usr/bin/hammer host create --name {{ inventory_hostname | regex_replace('\..*$', '') }} --organization {{ sat_org }} --location {{ sat_loc }} --hostgroup-title {{ sat_hg_title }} --mac {{ hostvars[inventory_hostname].ansible_facts.vbox_mac }} --build True --managed True
       delegate_to: "{{ satellite_server }}"
       register: hammer_host_create
       failed_when: hammer_host_create.rc != 0
