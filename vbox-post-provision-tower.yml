@@ -2,8 +2,6 @@
 - name: Post provisioning Network Configuration
   hosts: vbox
   become: true
-  vars_files:
-    - vars/vbox-vars.yml
 
   handlers:
     - name: restart sssd
@@ -13,7 +11,6 @@
     - name: daemon reload
       systemd:
         daemon_reload: yes
-
 
   tasks:
     - name: enable install repos
