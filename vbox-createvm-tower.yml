@@ -45,8 +45,6 @@
   hosts: all
   gather_facts: false
   become: true
-  vars_files:
-    - vars/vbox-vars.yml
   tasks:
     - name: Create a new host in Satellite that is ready for provisioning
       command: |
@@ -78,8 +76,6 @@
 - name: Update /etc/hosts to include the new server
   hosts: all
   gather_facts: false
-  vars_files:
-    - vars/vbox-vars.yml
   tasks:      
     - name: Insert IP address into local host file
       lineinfile:
@@ -88,7 +84,6 @@
         insertafter: EOF
       delegate_to: localhost
 
-      
   
 - name: Power on the VM to initiate the Kickstart
   hosts: all
