@@ -76,11 +76,12 @@
 - name: Update /etc/hosts to include the new server
   hosts: all
   gather_facts: false
+  become: true
   tasks:      
     - name: Insert IP address into local host file
       lineinfile:
         path: /etc/hosts
-        line: "{{ hostvars[inventory_hostname].ansible_facts.os_ipv4_addr }} {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
+        line: "{{ os_ipv4_addr }} {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
         insertafter: EOF
       delegate_to: localhost
 
