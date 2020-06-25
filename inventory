@@ -37,7 +37,8 @@ rhel80
 kpatch8
 
 [vbox0]
-ajg0100.ad.scdlabs.com
+ajg0112.ad.scdlabs.com
+ajg0113.ad.scdlabs.com
 
 [vbox1]
 #ajg0008.ad.scdlabs.com
