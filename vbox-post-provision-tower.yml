@@ -89,8 +89,8 @@
     - name: Update the sudoers file
       lineinfile:
         path: /etc/sudoers.d/sudoers
-        regexp: "^%sodoers"
-        line: "%sodoers    ALL=(ALL)       ALL"
+        regexp: "^%sudoers"
+        line: "%sudoers    ALL=(ALL)       ALL"
         create: yes
 
     - name: Add policies to /etc/sssd/sssd.conf
