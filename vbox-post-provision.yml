@@ -18,9 +18,8 @@
     - name: subscribe to a sub
       redhat_subscription:
         org_id: 1
-        activationkeys: ak-tracker-app,ak-rhel7-dev-premium-instance
-        pool_ids:
-          - 8a81818a72e685e60172e68c32530071
+        activationkeys: "{{ rhsm_aks }}" 
+        pool_ids: "{{ rhsm_pool_ids }}"
         state: present
 
     - name: enable install repos

@@ -13,6 +13,13 @@
         daemon_reload: yes
 
   tasks:
+    - name: subscribe to a sub
+      redhat_subscription:
+        org_id: 1
+        activationkeys: "{{ rhsm_aks }}" 
+        pool_ids: "{{ rhsm_pool_ids }}"
+        state: present
+
     - name: Configure default RHEL repos
       rhsm_repository:
         name: "{{ repo }}"
