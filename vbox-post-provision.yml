@@ -89,4 +89,12 @@
         line: "%sodoers    ALL=(ALL)       ALL"
         create: yes
 
+    - name: Add policies to /etc/sssd/sssd.conf
+      blockinfile:
+        path: /etc/sssd/sssd.conf
+        block: |
+          access_provider = simple
+          simple_allow_users = sdanielson, asenna
+          simple_allow_groups = MyGroup1, MyGroup2
+
 ...
