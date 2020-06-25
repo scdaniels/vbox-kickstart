@@ -1,0 +1,18 @@
+---
+- name: Inject IP Addr in IDM/DNS
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Compute Short Hostname for debugging
+      debug:
+        msg: "{{ inventory_hostname.split('.')[0] }}"
+    - name:  Add DNS A record
+      ipa_dnsrecord:
+        record_name: "{{ inventory_hostname.split('.')[0] }}"
+        record_type: A
+        record_value: "{{ ansible_default_ipv4.address }}"
+        zone_name: "{{ inventory_hostname.split('.')[1:4] | join('.') }}"
+        ipa_pass: "{{ adjoin_admin_password }}"
+        state: present
+      delegate_to: idm.idm.scdlabs.com
+...
